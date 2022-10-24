@@ -21,7 +21,7 @@
     <groupId>org.yardstickframework</groupId>
     <artifactId>yardstick</artifactId>
     <name>Yardstick</name>
-    <version>0.8.5</version>
+    <version>0.8.6</version>
 
     <url>https://github.com/gridgain/yardstick</url>
     <description>Framework for benchmarks writing.</description>
@@ -47,14 +47,16 @@
     </developers>
 
     <distributionManagement>
-        <snapshotRepository>
-            <id>sonatype-nexus-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-        </snapshotRepository>
         <repository>
-            <id>sonatype-nexus-staging</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>central</id>
+            <name>artifactory-primary-0-releases</name>
+            <url>https://spaceandtime.jfrog.io/artifactory/sxt-m2-virtual</url>
         </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>artifactory-primary-0-snapshots</name>
+            <url>https://spaceandtime.jfrog.io/artifactory/sxt-m2-virtual</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <properties>
@@ -227,7 +229,35 @@
                 <version>2.18.1</version>
                 <configuration>
                 </configuration>
+	    </plugin>
+
+	    <plugin>
+                <groupId>org.jfrog.buildinfo</groupId>
+                <artifactId>artifactory-maven-plugin</artifactId>
+                <version>3.2.3</version>
+                <inherited>true</inherited>
+                <executions>
+                    <execution>
+                        <id>build-info</id>
+                        <goals>
+                            <goal>publish</goal>
+                        </goals>
+                        <configuration>
+                            <deployProperties>
+                                <review.team>data-warehouse</review.team>
+                            </deployProperties>
+                            <publisher>
+                                <contextUrl>{{ARTIFACTORY_URL|"http://spaceandtime.jfrog.io/artifactory"}}/sxt-m2-virtual</contextUrl>
+                                <username>{{ARTIFACTORY_USER|security.getCurrentUsername()}}</username>
+                                <password>{{ARTIFACTORY_API_KEY|security.getEscapedEncryptedPassword()}}</password>
+                                <repoKey>libs-release-local</repoKey>
+                                <snapshotRepoKey>libs-snapshot-local</snapshotRepoKey>
+                            </publisher>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
+
         </plugins>
     </build>
 </project>
