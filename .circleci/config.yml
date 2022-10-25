@@ -1,0 +1,46 @@
+# CircleCI configuration file
+version: 2.1
+
+orbs:
+  maven: circleci/maven@1.3.0
+  artifactory: jfrog/artifactory-orb@1.0.1
+
+jobs:
+  build_module:
+    executor: maven/default
+    working_directory: ~/yardstick
+    parameters:
+      extra_parameters:
+        type: string
+    steps:
+      - checkout
+      - artifactory/install
+      - artifactory/configure
+      - restore_cache:
+          keys:
+            - yardstick-dependencies-{{ checksum "pom.xml" }}
+            - yardstick-dependencies-
+      - run:
+          name: Configure Java
+          command: |
+            sudo add-apt-repository -y ppa:openjdk-r/ppa;
+            sudo apt update -qq;
+            sudo apt install -yq openjdk-11-jdk;
+      - run:
+          name: Build Package
+          command: |
+            export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64;
+            jfrog rt mvn clean install << parameters.extra_parameters >>;
+      - artifactory/build-integration
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: yardstick-dependencies-{{ checksum "pom.xml" }}
+
+workflows:
+  build:
+    jobs:
+      - build_module:
+          name: Build JAR
+          extra_parameters: "--update-snapshots -f pom.xml -Drat.skip=true -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -DskipTests=true"
+          context: Artifactory 
